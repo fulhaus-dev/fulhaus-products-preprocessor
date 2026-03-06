@@ -86,11 +86,12 @@ export default async function processFlatFileProductDataStream(args: {
         fileLinesBatch.push(lines[i]);
       }
 
+      logger.info(`Started preprocessing lines for ${fileName}`);
+
       continue;
     }
 
     if (!fileConfig) continue;
-    logger.info(`Started preprocessing lines for ${fileName}`);
 
     // accumulate lines into a bounded batch
     for (let i = 0; i < lines.length; i++) {
