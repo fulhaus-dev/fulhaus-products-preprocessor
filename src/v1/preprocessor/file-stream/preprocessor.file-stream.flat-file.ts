@@ -21,7 +21,7 @@ export default async function processFlatFileProductDataStream(args: {
   const { flatFileStream, vendorNameId, ownerId, fileName } = args;
 
   logger.info(
-    `✅ Started processing lines from ${fileName} for vendor ${vendorNameId}`,
+    `✅ Started preprocessing for file ${fileName} from vendor ${vendorNameId}`,
   );
 
   const decoder = new TextDecoder();
@@ -39,7 +39,7 @@ export default async function processFlatFileProductDataStream(args: {
     buffer = lines.pop() || '';
 
     if (lines.length > 2 && !fileConfig) {
-      logger.info(`Starting AI mapping for ${fileName}`);
+      logger.info(`Started AI Mapping for ${fileName}`);
       const { data, errorRecord } = await asyncTryCatch(() =>
         aiAgent.productFileFieldMapGeneratorAgent().generate({
           messages: [
@@ -50,28 +50,30 @@ export default async function processFlatFileProductDataStream(args: {
           ],
         }),
       );
+      logger.info(`Completed AI Mapping for ${fileName}`);
 
       if (errorRecord) {
         logger.error(
-          `AI Mapping Failed for ${fileName}: ${JSON.stringify(errorRecord, null, 2)}`,
+          `AI Mapping Failed for ${fileName} from vendor ${vendorNameId}: ${JSON.stringify(errorRecord, null, 2)}`,
         );
         return;
       }
 
-      const out = data.output;
-      logger.info(`AI Mapping: ${JSON.stringify(out, null, 2)}`);
+      const dataOutput = data.output;
 
-      const headerFields = out.headerLine.split(out.delimiter);
-      const skuIndex = headerFields.indexOf(out.map.sku);
-      const categoryIndex = headerFields.indexOf(out.map.category);
-      const currencyIndex = headerFields.indexOf(out.map.currency);
-      const typeIndex = out.map.type ? headerFields.indexOf(out.map.type) : -1;
-      const stockQtyIndex = out.map.stockQty
-        ? headerFields.indexOf(out.map.stockQty)
+      const headerFields = dataOutput.headerLine.split(dataOutput.delimiter);
+      const skuIndex = headerFields.indexOf(dataOutput.map.sku);
+      const categoryIndex = headerFields.indexOf(dataOutput.map.category);
+      const currencyIndex = headerFields.indexOf(dataOutput.map.currency);
+      const typeIndex = dataOutput.map.type
+        ? headerFields.indexOf(dataOutput.map.type)
+        : -1;
+      const stockQtyIndex = dataOutput.map.stockQty
+        ? headerFields.indexOf(dataOutput.map.stockQty)
         : -1;
 
       fileConfig = {
-        ...out,
+        ...dataOutput,
         skuIndex,
         categoryIndex,
         currencyIndex,
@@ -88,6 +90,7 @@ export default async function processFlatFileProductDataStream(args: {
     }
 
     if (!fileConfig) continue;
+    logger.info(`Started preprocessing lines for ${fileName}`);
 
     // accumulate lines into a bounded batch
     for (let i = 0; i < lines.length; i++) {
@@ -103,8 +106,6 @@ export default async function processFlatFileProductDataStream(args: {
         fileConfig,
         lines: batch,
       });
-
-      logger.info(`PROGRESS ${fileName}: uniqueKeys=${getCategoryKeyCount()}`);
     }
   }
 
@@ -121,10 +122,8 @@ export default async function processFlatFileProductDataStream(args: {
     }
   }
 
-  logger.info(`✅ Categories processed. Unique keys=${getCategoryKeyCount()}`);
-
   const total = getCategoryTotal();
   logger.info(
-    `✅ Completed ${total} lines from ${fileName} for vendor ${vendorNameId}`,
+    `✅ Preprocessing completed for file ${fileName} from vendor ${vendorNameId}. Processed ${total} lines and ${getCategoryKeyCount()} unique keys`,
   );
 }

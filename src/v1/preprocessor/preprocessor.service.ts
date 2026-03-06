@@ -1,5 +1,4 @@
 import r2 from '@ludwig-preprocessor/cloudflare/cloudflare.r2';
-import { envConfig } from '@ludwig-preprocessor/config/env';
 import { logger } from '@ludwig-preprocessor/util/logger';
 import processFlatFileProductDataStream from '@ludwig-preprocessor/v1/preprocessor/file-stream/preprocessor.file-stream.flat-file';
 import processSpreadsheetFileProductDataStream from '@ludwig-preprocessor/v1/preprocessor/file-stream/preprocessor.file-stream.spreadsheet-file';
@@ -9,6 +8,7 @@ import processZipFileProductDataStream, {
 import {
   clearCategoryCountMap,
   getCategoryCountMap,
+  isCategoryFull,
   setCategoryCount,
 } from '@ludwig-preprocessor/v1/preprocessor/state/preprocessor.state.category-count';
 import {
@@ -18,14 +18,10 @@ import {
 import { ProductFileConfig } from '@ludwig-preprocessor/v1/preprocessor/preprocessor.type';
 import { getVendorProductDataFileKeysThatCanBeProcessed } from '@ludwig-preprocessor/v1/preprocessor/preprocessor.util';
 
-const productCategoryMax = envConfig.PRODUCT_CATEGORY_MAX;
-
 export async function processVendorProductDataService(args: {
   vendorNameId: string;
   ownerId: string;
 }) {
-  logger.info(`Max category per product: ${productCategoryMax}`);
-
   await cleanupStaleTempFiles();
   clearCategoryCountMap();
   clearSkuDedup();
@@ -37,18 +33,6 @@ export async function processVendorProductDataService(args: {
 
   const { flatFileKeys, spreadsheetFileKeys, zipFileKeys } =
     getVendorProductDataFileKeysThatCanBeProcessed(allProductFileKeys);
-
-  logger.info(
-    `Found ${flatFileKeys.length} flat files - ${JSON.stringify(
-      {
-        flatFileKeys,
-        spreadsheetFileKeys,
-        zipFileKeys,
-      },
-      null,
-      2,
-    )}`,
-  );
 
   for (const flatFileKey of flatFileKeys) {
     const { data: flatFileStream } =
@@ -140,10 +124,6 @@ export function processProductDataLines(args: {
       stockQtyIdx !== -1 ? Number(values[stockQtyIdx].trim()) : NaN;
     if (!isNaN(stockQty) && stockQty < 1) continue;
 
-    // SKU gate — skip everything if already seen
-    const sku = values[skuIdx]?.trim();
-    if (!sku || !markSkuIfNew(sku)) continue;
-
     const category = values[catIdx];
     const currency = values[curIdx];
     const type = typeIdx !== -1 ? values[typeIdx] : null;
@@ -151,6 +131,14 @@ export function processProductDataLines(args: {
     if (category === undefined || currency === undefined) continue;
 
     const categoryKey = `${category}${type ? ` | ${type}` : ''} ${currency}`;
+
+    // Category gate — skip everything if category is full
+    if (isCategoryFull(categoryKey)) continue;
+
+    // SKU gate — skip everything if already seen
+    const sku = values[skuIdx]?.trim();
+    if (!sku || !markSkuIfNew(sku)) continue;
+
     setCategoryCount(categoryKey);
   }
 }

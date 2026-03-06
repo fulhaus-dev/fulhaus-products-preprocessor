@@ -32,11 +32,8 @@ export default async function processZipFileProductDataStream(args: {
     logger.info(`Downloading ${fileName} → ${tmpZipPath}`);
     await pipeline(zipFileStream, createWriteStream(tmpZipPath));
 
-    logger.info(`Opening ZIP (async) → ${tmpZipPath}`);
     zip = new StreamZip.async({ file: tmpZipPath });
-
-    const entriesCount = await zip.entriesCount;
-    logger.info(`ZIP ready – ${entriesCount} entries`);
+    logger.info(`ZIP ready – ${fileName}`);
 
     const entries = await zip.entries();
 
