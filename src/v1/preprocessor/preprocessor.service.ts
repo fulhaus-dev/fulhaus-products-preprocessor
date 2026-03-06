@@ -3,7 +3,9 @@ import { envConfig } from '@ludwig-preprocessor/config/env';
 import { logger } from '@ludwig-preprocessor/util/logger';
 import processFlatFileProductDataStream from '@ludwig-preprocessor/v1/preprocessor/file-stream/preprocessor.file-stream.flat-file';
 import processSpreadsheetFileProductDataStream from '@ludwig-preprocessor/v1/preprocessor/file-stream/preprocessor.file-stream.spreadsheet-file';
-import processZipFileProductDataStream from '@ludwig-preprocessor/v1/preprocessor/file-stream/preprocessor.file-stream.zip-file';
+import processZipFileProductDataStream, {
+  cleanupStaleTempFiles,
+} from '@ludwig-preprocessor/v1/preprocessor/file-stream/preprocessor.file-stream.zip-file';
 import {
   clearCategoryCountMap,
   getCategoryCountMap,
@@ -20,7 +22,9 @@ export async function processVendorProductDataService(args: {
 }) {
   logger.info(`Max category per product: ${productCategoryMax}`);
 
+  await cleanupStaleTempFiles();
   clearCategoryCountMap();
+
   const { vendorNameId, ownerId } = args;
 
   const allProductFileKeys =
@@ -29,11 +33,17 @@ export async function processVendorProductDataService(args: {
   const { flatFileKeys, spreadsheetFileKeys, zipFileKeys } =
     getVendorProductDataFileKeysThatCanBeProcessed(allProductFileKeys);
 
-  console.log({
-    flatFileKeys,
-    spreadsheetFileKeys,
-    zipFileKeys,
-  });
+  logger.info(
+    `Found ${flatFileKeys.length} flat files - ${JSON.stringify(
+      {
+        flatFileKeys,
+        spreadsheetFileKeys,
+        zipFileKeys,
+      },
+      null,
+      2,
+    )}`,
+  );
 
   for (const flatFileKey of flatFileKeys) {
     const { data: flatFileStream } =
@@ -94,6 +104,7 @@ export function processProductDataLines(args: {
   const catIdx = fileConfig.categoryIndex;
   const curIdx = fileConfig.currencyIndex;
   const typeIdx = fileConfig.typeIndex;
+  const stockQtyIdx = fileConfig.stockQtyIndex;
 
   // Failsafe: If the AI mapped a column that doesn't actually exist in the header
   if (catIdx === -1 || curIdx === -1) return;
@@ -120,7 +131,9 @@ export function processProductDataLines(args: {
     const category = values[catIdx];
     const currency = values[curIdx];
     const type = typeIdx !== -1 ? values[typeIdx] : null;
+    const stockQty = stockQtyIdx !== -1 ? Number(values[stockQtyIdx]) : null;
 
+    if (stockQty && stockQty < 1) continue;
     if (category === undefined || currency === undefined) continue;
 
     const categoryKey = `${category}${type ? ` | ${type}` : ''} ${currency}`;

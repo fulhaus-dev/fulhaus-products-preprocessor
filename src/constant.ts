@@ -96,7 +96,13 @@ export const PRODUCT_DATA_FIELDS = [
     name: 'stockQty',
     required: false,
     description:
-      'The vendor field that represents current inventory quantity or stock level',
+      'The vendor field that represents current product quantity, stock level or quantity available',
+  },
+  {
+    name: 'availability',
+    required: false,
+    description:
+      'The vendor field that represents the availability of the product - in stock, out of stock, back-order, pre-order, discontinued etc.',
   },
   {
     name: 'category',

@@ -1,5 +1,5 @@
 import { createWriteStream } from 'node:fs';
-import { mkdir, unlink } from 'node:fs/promises';
+import { rm, mkdir, unlink } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { pipeline } from 'node:stream/promises';
@@ -84,4 +84,10 @@ export default async function processZipFileProductDataStream(args: {
     }
     await unlink(tmpZipPath).catch(() => {});
   }
+}
+
+// Call this once at server startup
+export async function cleanupStaleTempFiles() {
+  await rm(TEMP_DIR, { recursive: true, force: true });
+  await mkdir(TEMP_DIR, { recursive: true });
 }

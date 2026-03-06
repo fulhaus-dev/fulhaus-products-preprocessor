@@ -8,4 +8,5 @@ export type ProductFileConfig = {
   categoryIndex: number;
   currencyIndex: number;
   typeIndex: number;
+  stockQtyIndex: number;
 };

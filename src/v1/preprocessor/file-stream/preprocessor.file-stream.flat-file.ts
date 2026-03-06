@@ -65,12 +65,16 @@ export default async function processFlatFileProductDataStream(args: {
       const categoryIndex = headerFields.indexOf(out.map.category);
       const currencyIndex = headerFields.indexOf(out.map.currency);
       const typeIndex = out.map.type ? headerFields.indexOf(out.map.type) : -1;
+      const stockQtyIndex = out.map.stockQty
+        ? headerFields.indexOf(out.map.stockQty)
+        : -1;
 
       fileConfig = {
         ...out,
         categoryIndex,
         currencyIndex,
         typeIndex,
+        stockQtyIndex,
       };
 
       // push buffered sample into batch for processing
