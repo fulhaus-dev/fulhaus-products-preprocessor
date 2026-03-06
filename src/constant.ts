@@ -30,12 +30,6 @@ export const PRODUCT_DATA_FIELDS = [
       'The vendor field that contains the manufacturer part number or model identifier',
   },
   {
-    name: 'brand',
-    required: false,
-    description:
-      'The vendor field that identifies the brand or manufacturer name',
-  },
-  {
     name: 'name',
     required: true,
     description: 'The vendor field that contains the product name or title',

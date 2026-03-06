@@ -20,6 +20,9 @@ export default async function processFlatFileProductDataStream(args: {
 }) {
   const { flatFileStream, vendorNameId, ownerId, fileName } = args;
 
+  const processedTotal = getCategoryTotal();
+  const processedKeyCount = getCategoryKeyCount();
+
   logger.info(
     `✅ Started preprocessing for file ${fileName} from vendor ${vendorNameId}`,
   );
@@ -123,8 +126,22 @@ export default async function processFlatFileProductDataStream(args: {
     }
   }
 
-  const total = getCategoryTotal();
   logger.info(
-    `✅ Preprocessing completed for file ${fileName} from vendor ${vendorNameId}. Processed ${total} lines and ${getCategoryKeyCount()} unique keys`,
+    `✅ Preprocessing completed for file ${fileName} from vendor ${vendorNameId}.`,
+  );
+
+  const finalTotalForFile = getCategoryTotal() - processedTotal;
+  const finalKeyCountForFile = getCategoryKeyCount() - processedKeyCount;
+  logger.info(
+    `🚪🛏️ Totals for ${fileName}: ${JSON.stringify(
+      {
+        PRODUCTS: finalTotalForFile,
+        NEW_CATEGORIES: finalKeyCountForFile,
+      },
+      null,
+      2,
+    )}.
+    
+    `,
   );
 }

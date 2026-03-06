@@ -8,6 +8,8 @@ import processZipFileProductDataStream, {
 import {
   clearCategoryCountMap,
   getCategoryCountMap,
+  getCategoryKeyCount,
+  getCategoryTotal,
   isCategoryFull,
   setCategoryCount,
 } from '@ludwig-preprocessor/v1/preprocessor/state/preprocessor.state.category-count';
@@ -75,9 +77,24 @@ export async function processVendorProductDataService(args: {
 
   // Log all categories before clearing
   const categoryMap = getCategoryCountMap();
-  for (const [key, count] of categoryMap) {
-    logger.info(`CATEGORY: ${key} → ${count}`);
-  }
+  logger.info(
+    Array.from(
+      categoryMap,
+      ([key, count]) => `CATEGORY: ${key} → ${count}`,
+    ).join('\n'),
+  );
+
+  logger.info(`
+
+  🚪🛏️ Totals for ${vendorNameId}: ${JSON.stringify(
+    {
+      PRODUCTS: getCategoryTotal(),
+      CATEGORIES: getCategoryKeyCount(),
+    },
+    null,
+    2,
+  )}.
+  `);
 
   clearCategoryCountMap();
   clearSkuDedup();
