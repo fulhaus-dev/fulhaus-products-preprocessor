@@ -1,4 +1,5 @@
 import r2 from '@ludwig-preprocessor/cloudflare/cloudflare.r2';
+import { envConfig } from '@ludwig-preprocessor/config/env';
 import { logger } from '@ludwig-preprocessor/util/logger';
 import processFlatFileProductDataStream from '@ludwig-preprocessor/v1/preprocessor/file-stream/preprocessor.file-stream.flat-file';
 import processSpreadsheetFileProductDataStream from '@ludwig-preprocessor/v1/preprocessor/file-stream/preprocessor.file-stream.spreadsheet-file';
@@ -11,10 +12,14 @@ import {
 import { ProductFileConfig } from '@ludwig-preprocessor/v1/preprocessor/preprocessor.type';
 import { getVendorProductDataFileKeysThatCanBeProcessed } from '@ludwig-preprocessor/v1/preprocessor/preprocessor.util';
 
+const productCategoryMax = envConfig.PRODUCT_CATEGORY_MAX;
+
 export async function processVendorProductDataService(args: {
   vendorNameId: string;
   ownerId: string;
 }) {
+  logger.info(`Max category per product: ${productCategoryMax}`);
+
   clearCategoryCountMap();
   const { vendorNameId, ownerId } = args;
 
