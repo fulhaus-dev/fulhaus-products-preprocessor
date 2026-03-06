@@ -5,6 +5,7 @@ export type ProductFileConfig = {
   map: z.infer<typeof zProductFileFieldMapSchema>['map'];
   delimiter: string;
   headerLine: string;
+  skuIndex: number;
   categoryIndex: number;
   currencyIndex: number;
   typeIndex: number;

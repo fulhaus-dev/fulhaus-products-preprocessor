@@ -4,7 +4,7 @@ import { asyncTryCatch } from '@ludwig-preprocessor/util/try-catch';
 import {
   getCategoryKeyCount,
   getCategoryTotal,
-} from '@ludwig-preprocessor/v1/preprocessor/preprocessor.category-count-state';
+} from '@ludwig-preprocessor/v1/preprocessor/state/preprocessor.state.category-count';
 import { processProductDataLines } from '@ludwig-preprocessor/v1/preprocessor/preprocessor.service';
 import { ProductFileConfig } from '@ludwig-preprocessor/v1/preprocessor/preprocessor.type';
 
@@ -62,6 +62,7 @@ export default async function processFlatFileProductDataStream(args: {
       logger.info(`AI Mapping: ${JSON.stringify(out, null, 2)}`);
 
       const headerFields = out.headerLine.split(out.delimiter);
+      const skuIndex = headerFields.indexOf(out.map.sku);
       const categoryIndex = headerFields.indexOf(out.map.category);
       const currencyIndex = headerFields.indexOf(out.map.currency);
       const typeIndex = out.map.type ? headerFields.indexOf(out.map.type) : -1;
@@ -71,6 +72,7 @@ export default async function processFlatFileProductDataStream(args: {
 
       fileConfig = {
         ...out,
+        skuIndex,
         categoryIndex,
         currencyIndex,
         typeIndex,

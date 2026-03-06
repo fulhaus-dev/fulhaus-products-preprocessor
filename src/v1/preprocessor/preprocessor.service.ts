@@ -10,7 +10,11 @@ import {
   clearCategoryCountMap,
   getCategoryCountMap,
   setCategoryCount,
-} from '@ludwig-preprocessor/v1/preprocessor/preprocessor.category-count-state';
+} from '@ludwig-preprocessor/v1/preprocessor/state/preprocessor.state.category-count';
+import {
+  clearSkuDedup,
+  markSkuIfNew,
+} from '@ludwig-preprocessor/v1/preprocessor/state/preprocessor.state.sku-dedup';
 import { ProductFileConfig } from '@ludwig-preprocessor/v1/preprocessor/preprocessor.type';
 import { getVendorProductDataFileKeysThatCanBeProcessed } from '@ludwig-preprocessor/v1/preprocessor/preprocessor.util';
 
@@ -24,6 +28,7 @@ export async function processVendorProductDataService(args: {
 
   await cleanupStaleTempFiles();
   clearCategoryCountMap();
+  clearSkuDedup();
 
   const { vendorNameId, ownerId } = args;
 
@@ -91,6 +96,7 @@ export async function processVendorProductDataService(args: {
   }
 
   clearCategoryCountMap();
+  clearSkuDedup();
 }
 
 export function processProductDataLines(args: {
@@ -101,13 +107,14 @@ export function processProductDataLines(args: {
   const delimiter = fileConfig.delimiter;
 
   // Use pre-computed indices from fileConfig (set during AI mapping)
+  const skuIdx = fileConfig.skuIndex;
   const catIdx = fileConfig.categoryIndex;
   const curIdx = fileConfig.currencyIndex;
   const typeIdx = fileConfig.typeIndex;
   const stockQtyIdx = fileConfig.stockQtyIndex;
 
   // Failsafe: If the AI mapped a column that doesn't actually exist in the header
-  if (catIdx === -1 || curIdx === -1) return;
+  if (skuIdx === -1 || catIdx === -1 || curIdx === -1) return;
 
   // Pre-compute header first field once for skip check
   const firstDelimPos = fileConfig.headerLine.indexOf(delimiter);
@@ -128,12 +135,18 @@ export function processProductDataLines(args: {
     // Split once, direct index access O(1)
     const values = line.split(delimiter);
 
+    // Stock gate — skip everything if stock qty is 0
+    const stockQty = stockQtyIdx !== -1 ? Number(values[stockQtyIdx]) : NaN;
+    if (!isNaN(stockQty) && stockQty < 1) continue;
+
+    // SKU gate — skip everything if already seen
+    const sku = values[skuIdx];
+    if (!sku || markSkuIfNew(sku)) continue;
+
     const category = values[catIdx];
     const currency = values[curIdx];
     const type = typeIdx !== -1 ? values[typeIdx] : null;
-    const stockQty = stockQtyIdx !== -1 ? Number(values[stockQtyIdx]) : null;
 
-    if (stockQty && stockQty < 1) continue;
     if (category === undefined || currency === undefined) continue;
 
     const categoryKey = `${category}${type ? ` | ${type}` : ''} ${currency}`;
