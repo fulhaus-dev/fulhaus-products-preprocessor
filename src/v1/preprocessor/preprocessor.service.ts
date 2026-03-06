@@ -136,12 +136,13 @@ export function processProductDataLines(args: {
     const values = line.split(delimiter);
 
     // Stock gate — skip everything if stock qty is 0
-    const stockQty = stockQtyIdx !== -1 ? Number(values[stockQtyIdx]) : NaN;
+    const stockQty =
+      stockQtyIdx !== -1 ? Number(values[stockQtyIdx].trim()) : NaN;
     if (!isNaN(stockQty) && stockQty < 1) continue;
 
     // SKU gate — skip everything if already seen
-    const sku = values[skuIdx];
-    if (!sku || markSkuIfNew(sku)) continue;
+    const sku = values[skuIdx]?.trim();
+    if (!sku || !markSkuIfNew(sku)) continue;
 
     const category = values[catIdx];
     const currency = values[curIdx];

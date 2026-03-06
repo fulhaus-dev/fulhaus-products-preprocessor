@@ -16,5 +16,4 @@ export function markSkuIfNew(sku: string): boolean {
 
 export function clearSkuDedup() {
   skuDb.run('DELETE FROM skus');
-  skuDb.run('VACUUM');
 }
