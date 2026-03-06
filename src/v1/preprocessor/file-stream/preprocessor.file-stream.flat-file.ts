@@ -56,6 +56,7 @@ export default async function processFlatFileProductDataStream(args: {
       logger.info(`Completed AI Mapping for ${fileName}`);
 
       if (errorRecord) {
+        // TODO: Implement remote logger
         logger.error(
           `AI Mapping Failed for ${fileName} from vendor ${vendorNameId}: ${JSON.stringify(errorRecord, null, 2)}`,
         );

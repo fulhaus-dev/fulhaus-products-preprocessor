@@ -64,11 +64,12 @@ export default async function processZipFileProductDataStream(args: {
             fileName,
           });
       } catch (err) {
-        // Log but continue to next entry — don't abort the whole zip
+        // TODO: Implement remote logger
         logger.error(`Error processing ${fileNameInZip}: ${err}`);
       }
     }
   } catch (err) {
+    // TODO: Implement remote logger
     logger.error(`Error processing ${fileName}: ${err}`);
   } finally {
     // Single cleanup path — always runs exactly once
