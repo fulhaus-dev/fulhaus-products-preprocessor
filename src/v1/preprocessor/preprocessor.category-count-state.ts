@@ -21,6 +21,10 @@ export function getCategoryTotal() {
   return runningTotal;
 }
 
+export function getCategoryCountMap() {
+  return categoryCountMap;
+}
+
 export function clearCategoryCountMap() {
   categoryCountMap.clear();
   runningTotal = 0;
